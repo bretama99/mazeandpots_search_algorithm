@@ -3,140 +3,284 @@
   <div class="hill-climbing-container">
     <h1>Hill Climbing Maze Solver (Vue.js)</h1>
     
-    <!-- Controls -->
-    <div class="controls">
-      <button 
-        class="play-btn" 
-        @click="toggleRunning" 
-        :disabled="isComplete"
-      >
-        <i :class="isRunning ? 'fas fa-pause' : 'fas fa-play'"></i>
-        {{ isRunning ? 'Pause' : 'Play' }}
-      </button>
-      
-      <button 
-        class="step-btn" 
-        @click="performStep" 
-        :disabled="isRunning || isComplete"
-      >
-        <i class="fas fa-step-forward"></i>
-        Step
-      </button>
-      
-      <button 
-        class="solve-btn" 
-        @click="solveInstantly" 
-        :disabled="isComplete"
-      >
-        <i class="fas fa-bolt"></i>
-        Complete
-      </button>
-      
-      <button 
-        class="reset-btn" 
-        @click="resetAlgorithm"
-      >
-        <i class="fas fa-undo"></i>
-        Reset
-      </button>
-    </div>
-    
-    <!-- Speed control -->
-    <div class="speed-control">
-      <label for="speed">Animation Speed:</label>
-      <div>
-        <input 
-          id="speed" 
-          type="range" 
-          min="50" 
-          max="1000" 
-          step="50" 
-          v-model.number="speed" 
-          class="speed-slider"
-        >
+    <!-- Main content with maze and explanations side by side -->
+    <div class="main-content">
+      <!-- Left side: Maze and controls -->
+      <div class="maze-section">
+        <h2>Maze Visualization</h2>
+        
+        <!-- Controls -->
+        <div class="controls">
+          <button 
+            class="play-btn" 
+            @click="toggleRunning" 
+            :disabled="isComplete"
+          >
+            <i :class="isRunning ? 'fas fa-pause' : 'fas fa-play'"></i>
+            {{ isRunning ? 'Pause' : 'Play' }}
+          </button>
+          
+          <button 
+            class="step-btn" 
+            @click="performStep" 
+            :disabled="isRunning || isComplete"
+          >
+            <i class="fas fa-step-forward"></i>
+            Step
+          </button>
+          
+          <button 
+            class="solve-btn" 
+            @click="solveInstantly" 
+            :disabled="isComplete"
+          >
+            <i class="fas fa-bolt"></i>
+            Complete
+          </button>
+          
+          <button 
+            class="reset-btn" 
+            @click="resetAlgorithm"
+          >
+            <i class="fas fa-undo"></i>
+            Reset
+          </button>
+        </div>
+        
+        <!-- Speed control -->
+        <div class="speed-control">
+          <label for="speed">Animation Speed:</label>
+          <div>
+            <input 
+              id="speed" 
+              type="range" 
+              min="50" 
+              max="1000" 
+              step="50" 
+              v-model.number="speed" 
+              class="speed-slider"
+            >
+          </div>
+          <div class="speed-labels">
+            <span>Fast</span>
+            <span>Slow</span>
+          </div>
+        </div>
+        
+        <!-- Maze grid -->
+        <div class="maze-grid">
+          <div 
+            v-for="(row, y) in maze" 
+            :key="'row-' + y" 
+            class="maze-row"
+          >
+            <div 
+              v-for="(cell, x) in row" 
+              :key="`${x}-${y}`"
+              class="cell"
+              :class="getCellClass(x, y)"
+            >
+              {{ getCellText(x, y) }}
+              <span v-if="shouldShowHeuristic(x, y)" class="heuristic-value">
+                {{ getHeuristicValue(x, y) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-color start"></div>
+            <span>Start (★)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color goal"></div>
+            <span>Goal (⛳)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color wall"></div>
+            <span>Obstacle</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color visited"></div>
+            <span>Visited</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color path"></div>
+            <span>Path Taken</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color current"></div>
+            <span>Current Position</span>
+          </div>
+        </div>
       </div>
-      <div class="speed-labels">
-        <span>Fast</span>
-        <span>Slow</span>
-      </div>
-    </div>
-    
-    <!-- Maze grid -->
-    <div class="maze-grid">
-      <div 
-        v-for="(row, y) in maze" 
-        :key="'row-' + y" 
-        class="maze-row"
-      >
-        <div 
-          v-for="(cell, x) in row" 
-          :key="`${x}-${y}`"
-          class="cell"
-          :class="getCellClass(x, y)"
-        >
-          {{ getCellText(x, y) }}
-          <span v-if="shouldShowHeuristic(x, y)" class="heuristic-value">
-            {{ getHeuristicValue(x, y) }}
-          </span>
+      
+      <!-- Right side: Current state and explanations -->
+      <div class="explanation-section">
+        <h2>Algorithm State</h2>
+        
+        <!-- Current Step Explanation -->
+        <div class="current-step-explanation">
+          <h3>Current Algorithm Step</h3>
+          <p>{{ getCurrentStepExplanation() }}</p>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats">
+          <h3>Statistics</h3>
+          <p>Steps taken: <strong>{{ steps }}</strong></p>
+          <p>Cells visited: <strong>{{ visited.length }}</strong></p>
+          <p>Random restarts: <strong>{{ restarts }}</strong></p>
+          <p v-if="isComplete" class="success-message">
+            <i class="fas fa-check-circle"></i> Goal reached!
+          </p>
+          <p v-if="isStuck" class="stuck-message">
+            <i class="fas fa-exclamation-triangle"></i> Stuck in local minimum! 
+            (Will do a random restart after {{ 3 - stuckCount }} more attempts)
+          </p>
+        </div>
+        
+        <!-- Current position details -->
+        <div class="current-details">
+          <h3>Current Position ({{ currentPosition.x }}, {{ currentPosition.y }})</h3>
+          <p><strong>Heuristic value:</strong> {{ currentPositionHeuristic }} (Manhattan distance to goal)</p>
+          
+          <div v-if="neighbors.length > 0" class="neighbors-section">
+            <h4>Neighbor Analysis:</h4>
+            <ul class="neighbor-list">
+              <li v-for="(n, index) in neighbors" :key="index" class="neighbor-item"
+                  :class="{'best-neighbor': n.isBest, 'visited-neighbor': n.isVisited}">
+                Position ({{ n.position.x }}, {{ n.position.y }}): {{ n.value }}
+                <span v-if="n.isBest" class="best-flag"> (Best choice)</span>
+                <span v-if="n.isVisited" class="visited-flag"> (Already Visited)</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- Legend -->
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-color start"></div>
-        <span>Start (★)</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color goal"></div>
-        <span>Goal (⛳)</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color wall"></div>
-        <span>Obstacle</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color visited"></div>
-        <span>Visited</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color path"></div>
-        <span>Path Taken</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color current"></div>
-        <span>Current Position</span>
-      </div>
-    </div>
-    
-    <!-- Stats -->
-    <div class="stats">
-      <h2>Stats</h2>
-      <p>Steps taken: {{ steps }}</p>
-      <p>Cells visited: {{ visited.length }}</p>
-      <p>Random restarts: {{ restarts }}</p>
-      <p v-if="isComplete" class="success-message">
-        Goal reached!
-      </p>
-      <p v-if="isStuck" class="stuck-message">
-        Stuck in local minimum! (Will do a random restart after {{ 3 - stuckCount }} more attempts)
-      </p>
-    </div>
-    
-    <!-- Current position details -->
-    <div class="current-details">
-      <h2>Current Position ({{ currentPosition.x }}, {{ currentPosition.y }})</h2>
-      <p>Heuristic value: {{ currentPositionHeuristic }} (Manhattan distance to goal)</p>
+    <!-- Hill Climbing Explanation -->
+    <div class="algorithm-explanation">
+      <h2>Hill Climbing Algorithm Explanation</h2>
       
-      <h3 v-if="neighbors.length > 0">Neighbor Heuristics:</h3>
-      <ul v-if="neighbors.length > 0" class="neighbor-list">
-        <li v-for="(n, index) in neighbors" :key="index" class="neighbor-item">
-          Position ({{ n.position.x }}, {{ n.position.y }}): {{ n.value }}
-          <span v-if="n.isBest" class="best-flag"> (Best)</span>
-          <span v-if="n.isVisited" class="visited-flag"> (Already Visited)</span>
+      <div class="explanation-grid">
+        <div class="explanation-column">
+          <h3>Problem Formulation</h3>
+          <ul>
+            <li><strong>State:</strong> Position (x,y) in the 2D grid</li>
+            <li><strong>Initial state:</strong> Starting position (★)</li>
+            <li><strong>Goal state:</strong> Finishing position (⛳)</li>
+            <li><strong>Actions:</strong> Move in four directions (up, down, left, right)</li>
+            <li><strong>Transition model:</strong> Moving from current cell to an adjacent cell if it's not an obstacle</li>
+            <li><strong>Heuristic function:</strong> Manhattan distance to goal: |x₁-x₂| + |y₁-y₂|</li>
+          </ul>
+        </div>
+        
+        <div class="explanation-column">
+          <h3>Hill Climbing Characteristics</h3>
+          <ul>
+            <li><strong>Local search algorithm:</strong> Only maintains current state, not paths to it</li>
+            <li><strong>Greedy approach:</strong> Always moves to the neighbor with the best heuristic value</li>
+            <li><strong>Local optima problem:</strong> Can get stuck when no neighbor improves the heuristic</li>
+            <li><strong>Random restarts:</strong> Jump to a random position to escape local minima</li>
+            <li><strong>Memory efficient:</strong> O(1) space complexity (vs. O(b^d) for BFS)</li>
+            <li><strong>Not optimal:</strong> Does not guarantee the shortest path</li>
+          </ul>
+        </div>
+      </div>
+      
+      <h3>Algorithm Steps</h3>
+      <ol class="algorithm-steps">
+        <li>Start at the initial position</li>
+        <li>Calculate the heuristic value (Manhattan distance to goal)</li>
+        <li>Generate all valid neighboring positions (not walls, within bounds)</li>
+        <li>Calculate the heuristic value for each neighbor</li>
+        <li>If there's a neighbor with a better (lower) heuristic value than the current position:
+          <ul>
+            <li>Move to that neighbor</li>
+          </ul>
         </li>
-      </ul>
+        <li>If no neighbor has a better heuristic, or all better neighbors are already visited:
+          <ul>
+            <li>Increment stuck counter</li>
+            <li>After being stuck for 3 attempts, perform a random restart</li>
+          </ul>
+        </li>
+        <li>Repeat until reaching the goal or maximum steps</li>
+      </ol>
+      
+      <h3>Local Minima and Random Restarts</h3>
+      <p>
+        A <strong>local minimum</strong> occurs when the current position has a lower heuristic value than all 
+        its neighbors, but is not the goal state. In a maze, this can happen when walls create "traps" that
+        temporarily increase the distance to the goal, even though moving that way is ultimately necessary.
+      </p>
+      <p>
+        <strong>Random restarts</strong> are a simple but effective technique to escape local minima. When the
+        algorithm detects it's stuck (no better unvisited neighbors), it jumps to a random valid position in
+        the maze and continues searching from there. This helps explore different regions of the search space.
+      </p>
+      
+      <h3>Heuristic Function: Manhattan Distance</h3>
+      <p>
+        The <strong>Manhattan distance</strong> (also known as city block distance) is calculated as:
+      </p>
+      <div class="formula">
+        h(x,y) = |x - x<sub>goal</sub>| + |y - y<sub>goal</sub>|
+      </div>
+      <p>
+        It represents the minimum number of horizontal and vertical moves needed to reach the goal in an
+        ideal scenario with no obstacles. This makes it a good heuristic for grid-based pathfinding.
+      </p>
+      
+      <h3>Comparison with Other Search Algorithms</h3>
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Hill Climbing</th>
+              <th>Breadth-First Search (BFS)</th>
+              <th>A* Search</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Memory Usage</td>
+              <td>Low (O(1))</td>
+              <td>High (O(b<sup>d</sup>))</td>
+              <td>High (O(b<sup>d</sup>))</td>
+            </tr>
+            <tr>
+              <td>Guarantees Optimal Solution</td>
+              <td>No</td>
+              <td>Yes (for uniform costs)</td>
+              <td>Yes (with admissible heuristic)</td>
+            </tr>
+            <tr>
+              <td>Completeness</td>
+              <td>No (without restarts)</td>
+              <td>Yes</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Use of Heuristic</td>
+              <td>Yes</td>
+              <td>No</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Time Efficiency</td>
+              <td>Often fast, but variable</td>
+              <td>Slow for large problems</td>
+              <td>Faster than BFS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -171,7 +315,16 @@ export default {
       isRunning: false,
       isComplete: false,
       speed: 300,
-      animationTimer: null
+      animationTimer: null,
+      // Step explanations based on state
+      stepExplanations: {
+        initial: "Starting at the initial position (0,0). The Manhattan distance to the goal is 6.",
+        evaluating: "Evaluating the current position and its neighbors to find the best next move.",
+        moving: "Moving to the neighbor with the lowest heuristic value (closest to the goal).",
+        stuck: "Stuck in a local minimum. No unvisited neighbor has a better heuristic value.",
+        restart: "Performing a random restart to escape the local minimum.",
+        goal: "Goal reached! We've successfully found a path to the destination."
+      }
     }
   },
   computed: {
@@ -420,6 +573,38 @@ export default {
       this.steps++
     },
     
+    // Get an explanation of the current algorithm step
+    getCurrentStepExplanation() {
+      if (this.isComplete) {
+        return this.stepExplanations.goal;
+      }
+      
+      if (this.stuckCount >= 3) {
+        return this.stepExplanations.restart + 
+          ` Jumping to a new position (${this.currentPosition.x}, ${this.currentPosition.y}).`;
+      }
+      
+      if (this.isStuck) {
+        return this.stepExplanations.stuck + 
+          ` Current stuck count: ${this.stuckCount}/3 before random restart.`;
+      }
+      
+      if (this.steps === 0) {
+        return this.stepExplanations.initial;
+      }
+      
+      // Find the best neighbor
+      const bestNeighbor = this.neighbors.find(n => n.isBest);
+      
+      if (bestNeighbor) {
+        return this.stepExplanations.moving + 
+          ` Moving to (${bestNeighbor.position.x}, ${bestNeighbor.position.y}) with heuristic value ${bestNeighbor.value}.`;
+      }
+      
+      return this.stepExplanations.evaluating + 
+        ` Current heuristic: ${this.currentPositionHeuristic}.`;
+    },
+    
     // Start animation loop
     startAnimation() {
       this.animationTimer = setInterval(() => {
@@ -516,14 +701,51 @@ export default {
 
 <style scoped>
 .hill-climbing-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
 h1 {
   text-align: center;
   margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+h2 {
+  margin-top: 20px;
+  margin-bottom: 15px;
+  color: #3498db;
+}
+
+h3 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  color: #2980b9;
+}
+
+h4 {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  color: #2c3e50;
+}
+
+/* Main content layout with maze and explanations side by side */
+.main-content {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.maze-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+.explanation-section {
+  flex: 1;
+  min-width: 300px;
 }
 
 .controls {
@@ -536,12 +758,17 @@ h1 {
 button {
   padding: 8px 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
 }
 
 button:disabled {
@@ -609,6 +836,7 @@ button:disabled {
   font-size: 20px;
   position: relative;
   border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .cell.start {
@@ -641,8 +869,14 @@ button:disabled {
 
 .heuristic-value {
   position: absolute;
-  font-size: 14px;
+  top: 4px;
+  right: 4px;
+  font-size: 12px;
+  font-weight: normal;
   color: #333;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 1px 3px;
+  border-radius: 2px;
 }
 
 .legend {
@@ -688,11 +922,20 @@ button:disabled {
   background-color: #60a5fa;
 }
 
+.current-step-explanation {
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+  margin-bottom: 20px;
+}
+
 .stats, .current-details {
-  margin-top: 20px;
+  margin-top: 15px;
   padding: 15px;
   background-color: #f8fafc;
-  border-radius: 6px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .success-message {
@@ -705,8 +948,25 @@ button:disabled {
 }
 
 .neighbor-list {
-  list-style-type: disc;
-  padding-left: 20px;
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.neighbor-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+}
+
+.best-neighbor {
+  background-color: #d1fae5;
+  border-left: 3px solid #10b981;
+}
+
+.visited-neighbor {
+  background-color: #fee2e2;
+  border-left: 3px solid #ef4444;
 }
 
 .best-flag {
@@ -718,6 +978,93 @@ button:disabled {
   color: #ef4444;
 }
 
+.algorithm-explanation {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 30px;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.explanation-column {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.explanation-column ul {
+  padding-left: 20px;
+}
+
+.explanation-column li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.algorithm-steps {
+  background-color: #fff;
+  padding: 15px 15px 15px 40px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  line-height: 1.6;
+}
+
+.algorithm-steps li {
+  margin-bottom: 10px;
+}
+
+.algorithm-steps ul {
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+.algorithm-explanation p {
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.formula {
+  background-color: #e0f2fe;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  margin: 15px 0;
+}
+
+.comparison-table {
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+.comparison-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th, .comparison-table td {
+  border: 1px solid #cbd5e1;
+  padding: 10px;
+  text-align: left;
+}
+
+.comparison-table th {
+  background-color: #f1f5f9;
+  font-weight: bold;
+}
+
+.comparison-table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
 @keyframes pulse {
   0% {
     opacity: 1;
@@ -727,6 +1074,14 @@ button:disabled {
   }
   100% {
     opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 900px) {
+  .main-content, .explanation-grid {
+    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }
 </style>
