@@ -3,10 +3,13 @@
   <div id="app">
     <nav class="main-nav">
       <div class="nav-container">
-        <router-link to="/" class="nav-logo">Search Solvers</router-link>
+        <router-link to="/" class="nav-logo">Intelligent  Agents</router-link>
         <div class="nav-links">
+                    <router-link to="/wumpus">Logic
+Formalisms</router-link>
           <router-link to="/maze">Maze Solver</router-link>
           <router-link to="/pots">Pots Solver</router-link>
+
         </div>
       </div>
     </nav>

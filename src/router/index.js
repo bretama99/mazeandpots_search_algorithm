@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import MazeSolver from '../views/MazeSolver.vue'
 import PotsSolver from '../views/PotsSolver.vue'
+import Wumpus from '../views/Wumpus.vue'
 
 const routes = [
   {
@@ -19,6 +20,11 @@ const routes = [
     path: '/pots',
     name: 'PotsSolver',
     component: PotsSolver
+  },
+    {
+    path: '/wumpus',
+    name: 'Wumpus',
+    component: Wumpus
   }
 ]
 
