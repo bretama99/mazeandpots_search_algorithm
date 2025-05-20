@@ -49,14 +49,6 @@
               Good for encoding specific percepts and immediate inferences 
               but less flexible for general rules.
             </p>
-            <p>
-              Sample Propositions:
-              <code>P(x,y): Pit at (x,y)</code>, <code>W(x,y): Wumpus at (x,y)</code>, <code>S(x,y): Stench or breeze sensed at (x,y)</code>
-            </p>
-            <p>
-              Safety Rule Example: If no stench or breeze sensors triggered in adjacent tiles, then those tiles are safe: 
-              <code>¬S(x,y) →¬ P(x±1,y) ∧ ¬ P(x,y±1) ∧ ¬W(x±1,y) ∧ ¬W(x,y±1)</code>
-            </p>
           </div>
           
           <div class="logic-option">
@@ -68,11 +60,6 @@
             <p>
               More powerful for expressing general rules and relationships across 
               the entire grid.
-            </p>
-            <p>
-              Example FOL Rules:
-              <code>∀x,y (Adjacent(x,y) ∧ ¬Breeze(y) → ¬Pit(x))</code>
-              "If tile (x,y) is adjacent to a tile with no breeze, then (x,y) has no pit."
             </p>
           </div>
         </div>
@@ -100,7 +87,6 @@
           <li><b>Safe cells</b>: The agent prefers to move to unvisited safe cells</li>
           <li><b>Probabilistic exploration</b>: When no guaranteed safe unvisited cells exist, the agent chooses cells with the highest safety probability</li>
           <li><b>Knowledge transfer</b>: New robots benefit from the discoveries and deaths of previous robots</li>
-          <li><b>Risk-Based Exploration</b>: When no logically safe tiles exist, the robot prioritizes tiles with the lowest inferred hazard probability</li>
         </ul>
       </div>
     </div>

@@ -2,14 +2,14 @@
   <div class="container">
     <h1>Wumpus World Multi-Agent Simulation</h1>
     
-    <div class="formalism-buttons">
-      <button @click="setFormalism('prop')" :class="['formalism-button', { active: formalism === 'prop' }]">
-        <i class="fas fa-cubes"></i> Propositional Logic
-      </button>
-      <button @click="setFormalism('fol')" :class="['formalism-button', { active: formalism === 'fol' }]">
-        <i class="fas fa-brain"></i> First-Order Logic
-      </button>
-    </div>
+<div class="formalism-buttons">
+  <button @click="setFormalism('prop')" :class="['formalism-button', { active: formalism === 'prop' }]">
+    <i class="fas fa-cubes"></i> Propositional Logic
+  </button>
+  <button @click="setFormalism('fol')" :class="['formalism-button', { active: formalism === 'fol' }]">
+    <i class="fas fa-brain"></i> First-Order Logic
+  </button>
+</div>
     
     <div class="game-container">
       <documentation-guide />
@@ -24,7 +24,6 @@
         :game-over="gameOver"
         :world="world"
         :has-gold="hasGold"
-        :probabilities="probabilities"
         @find-safe-moves="findSafeMoves"
         @make-best-move="makeBestMove"
         @start-auto-mode="startAutoMode"
@@ -70,7 +69,7 @@ export default {
   setup() {
     // Game configuration
     const gridSize = 4;
-    const formalism = ref('fol'); // 'prop' or 'fol'
+    const formalism = ref('fol'); // 'fol' or 'asp'
     const activeTab = ref('kb');
     const isRevealed = ref(false);
     const isShowingProbabilities = ref(false);
@@ -95,7 +94,8 @@ export default {
     const knowledgeBase = ref([]);
     const logs = ref([]);
     
-    // Probability model    
+    // Path planning    
+    // Probability model
     const probabilities = reactive({
       wumpus: {},
       pit: {},
@@ -107,7 +107,7 @@ export default {
     
     // Computed properties
     const formalismName = computed(() => {
-      return formalism.value === 'fol' ? 'First-Order Logic' : 'Propositional Logic';
+      return formalism.value === 'fol' ? 'First-Order Logic' : 'Answer Set Programming';
     });
     
     // Initialize the world
@@ -187,32 +187,19 @@ export default {
         addToKnowledgeBase('∀x,y: Breeze(x,y) ↔ ∃x\',y\'(Adjacent(x,y,x\',y\') ∧ Pit(x\',y\'))');
         addToKnowledgeBase('∀x,y: Safe(x,y) ↔ ¬Wumpus(x,y) ∧ ¬Pit(x,y)');
       } else {
-        // Propositional logic axioms - specific instances
-        for (let x = 1; x <= gridSize; x++) {
-          for (let y = 1; y <= gridSize; y++) {
-            // Skip the starting position
-            if (x === 1 && y === 1) continue;
-            
-            const adjacent = getAdjacentCells(x, y);
-            
-            // For each adjacent cell, add stench/breeze implications
-            adjacent.forEach(adj => {
-              addToKnowledgeBase(`Stench(${adj.x},${adj.y}) → Wumpus(${x},${y}) ∨ ...`);
-              addToKnowledgeBase(`Breeze(${adj.x},${adj.y}) → Pit(${x},${y}) ∨ ...`);
-            });
-            
-            // Safety definition for each cell
-            addToKnowledgeBase(`Safe(${x},${y}) ↔ ¬Wumpus(${x},${y}) ∧ ¬Pit(${x},${y})`);
-          }
-        }
+        // ASP specific rules
+        addToKnowledgeBase('% Grid positions (1-4,1-4)');
+        addToKnowledgeBase('pos(1..4, 1..4).');
+        addToKnowledgeBase('% Exactly one wumpus');
+        addToKnowledgeBase('1 { wumpus(X,Y) : pos(X,Y) } 1.');
+        addToKnowledgeBase('% Safe cell definition');
+        addToKnowledgeBase('safe(X,Y) :- pos(X,Y), not wumpus(X,Y), not pit(X,Y).');
       }
     }
     
     // Helper function to add to knowledge base
     function addToKnowledgeBase(fact) {
-      if (!knowledgeBase.value.includes(fact)) {
-        knowledgeBase.value.push(fact);
-      }
+      knowledgeBase.value.push(fact);
     }
     
     // Get percepts at the current position
@@ -874,8 +861,7 @@ export default {
       stopAutoMode,
       safeProbability,
       formatProbability,
-      getProbabilityClass,
-      probabilities
+      getProbabilityClass
     };
   }
 };

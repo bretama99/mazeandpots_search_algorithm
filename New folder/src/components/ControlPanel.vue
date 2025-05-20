@@ -101,16 +101,6 @@
           <div v-if="autoMode" class="auto-status active">Automatic Mode Active</div>
           <div v-else class="auto-status">Manual Mode</div>
         </div>
-        
-        <div class="reasoning-panel">
-          <h4><i class="fas fa-lightbulb"></i> Agent Reasoning</h4>
-          <div class="reasoning-bullets">
-            <p>Using {{ formalismName }} to construct logical inferences</p>
-            <p v-if="gameStatus.includes('restarted')">Applying knowledge from previous robots</p>
-            <p>Safe moves are proven with {{ formalismName === 'First-Order Logic' ? 'universal quantifiers' : 'specific propositions' }}</p>
-            <p v-if="!isShowingProbabilities">Toggle probabilities to see Bayesian inference</p>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -409,40 +399,6 @@ export default {
   background-color: #e8f5e9;
   color: #2e7d32;
   animation: pulse 2s infinite;
-}
-
-.reasoning-panel {
-  background-color: white;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 15px;
-}
-
-.reasoning-panel h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #3273a8;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.reasoning-bullets {
-  font-size: 12px;
-}
-
-.reasoning-bullets p {
-  margin: 6px 0;
-  padding-left: 15px;
-  position: relative;
-}
-
-.reasoning-bullets p:before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  color: #3273a8;
 }
 
 @keyframes pulse {
